@@ -1,0 +1,82 @@
+/*Use A when you want to run code as usual (run in June to analyse May) */
+/*A*/
+%let current_date=&sysdate9;
+%let setrundate=today();
+ 
+/*Use B when you want to run code for the previous month (run in June to analyse December) */
+/*B*/
+/*%let current_date= 01Jan2019;  */
+/*%let setrundate= "&current_date"d;  */
+ 
+%global SnapDt CurrDt querydate mth_name YYYYMMDD YYYYMM prevYYYYMM prevYYMM YYMM
+              PreYrDt PreYr_YYYYMM;
+ 
+%macro dates(rundate=)/minoperator;
+/*Calculated automatically*/
+       %let current_date_date9=%sysfunc(inputn(&current_date,date9.));
+       %let CurrDt = %sysfunc(intnx(month,&current_date_date9.,-1,E),date9.);
+       %let SnapDt =&CurrDt.;
+       %let PreYrDt = %sysfunc(intnx(month,&current_date_date9.,-1,E),date9.);
+       %let PreYr_YYYYMM=%sysfunc(intnx(month,&current_date_date9.,-13,E),yymmn6.);
+       %let YYMM=%sysfunc(intnx(month,&current_date_date9.,-1,E),yymmn4.);
+       %let prevYYMM=%sysfunc(intnx(month,&current_date_date9.,-2,E),yymmn4.);
+       %let YYYYMM=%sysfunc(intnx(month,&current_date_date9.,-1,E),yymmn6.);
+       %let prevYYYYMM=%sysfunc(intnx(month,&current_date_date9.,-2,E),yymmn6.);
+       %let YYYYMMDD=%sysfunc(intnx(month,&current_date_date9.,-1,E),yymmddn8.);
+       %let mth_name=%substr(&CurrDt.,3,7);
+       %let date=%sysfunc(intnx(month,&current_date_date9.,-1,E),yymmdd10.);
+       %let querydate = "AsAtDate=&date.;";
+ 
+/*Check log to see values of macro variables */
+       %put &=current_date
+              &=SnapDt.
+              &=CurrDt.
+              &=mth_name.
+              &=YYYYMMDD.
+              &=YYYYMM.
+              &=prevYYYYMM.
+              &=prevYYMM.
+              &=YYMM.     
+             &=PreYrDt.
+              &=PreYr_YYYYMM.
+              &=querydate.;      
+%mend dates;
+ 
+%dates(rundate=&current_date.);        
+             
+ 
+/*Check what macro variables are used in environment */
+%put _global_;
+ 
+104        %dates(rundate=&current_date.);          
+SYMBOLGEN:  Macro variable CURRENT_DATE resolves to 24JUN2019
+SYMBOLGEN:  Macro variable CURRENT_DATE resolves to 24JUN2019
+SYMBOLGEN:  Macro variable CURRENT_DATE_DATE9 resolves to 21724
+SYMBOLGEN:  Macro variable CURRDT resolves to 31MAY2019
+SYMBOLGEN:  Macro variable CURRENT_DATE_DATE9 resolves to 21724
+SYMBOLGEN:  Macro variable DATE resolves to 2019-05-31
+SYMBOLGEN:  Macro variable CURRENT_DATE resolves to 24JUN2019
+SYMBOLGEN:  Macro variable SNAPDT resolves to 31MAY2019
+SYMBOLGEN:  Macro variable CURRDT resolves to 31MAY2019
+SYMBOLGEN:  Macro variable MTH_NAME resolves to MAY2019
+SYMBOLGEN:  Macro variable YYYYMMDD resolves to 20190531
+SYMBOLGEN:  Macro variable YYYYMM resolves to 201905
+SYMBOLGEN:  Macro variable PREVYYYYMM resolves to 201904
+SYMBOLGEN:  Macro variable PREVYYMM resolves to 1904
+SYMBOLGEN:  Macro variable YYMM resolves to 1905
+SYMBOLGEN:  Macro variable PREYRDT resolves to 31MAY2019
+SYMBOLGEN:  Macro variable PREYR_YYYYMM resolves to 201805
+SYMBOLGEN:  Macro variable QUERYDATE resolves to "AsAtDate=2019-05-31;"
+ 
+CURRENT_DATE=24JUN2019  
+SNAPDT=31MAY2019  
+CURRDT=31MAY2019    
+MTH_NAME=MAY2019   
+YYYYMMDD=20190531  
+YYYYMM=201905  
+PREVYYYYMM=201904  
+PREVYYMM=1904YYMM=1905
+PREYRDT=31MAY2019  
+PREYR_YYYYMM=201805  
+QUERYDATE="AsAtDate=2019-05-31;"
+
