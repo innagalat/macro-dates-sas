@@ -1,0 +1,122 @@
+
+ 
+Functions:
+FINYEAR(date)
+Date is any valid SAS date. FINYEAR returns a length 7 CHAR representing the
+Financial Year expressed as '9999-99'. (e.g. the date '16/5/2019'd would return
+'2018-19')
+ 
+FINQTR(date)
+Date is any valid SAS date. FINQTR returns a numeric value representing the financial
+quarter. (e.g. the date '16/5/2019'd would return 4)
+ 
+FINYEARQTR(date)
+Date is any valid SAS date. FINYEARQTR returns a length 10 CHAR representing the financial
+year and quarter expressed as '9999-99 Q9'. (e.g. the date '16/5/2019'd would return
+'2018-19 Q4')
+ 
+*****************************************************************/
+%let fcmplib=work;
+ 
+*location of function package
+ 
+*location to store compiled functions;
+%let fmtlib=work;
+ 
+* location to store formats;
+ 
+/* use DELETEFUNC of FCMP to delete the existing functions. This is done to avoid an
+irritating warning message.
+omit this step if using the WORK library as it will cause a warning if the functions
+have not yet been created */
+ 
+/*proc fcmp outlib=&fcmplib..ndis.findates;*/
+/*   deletefunc finyear;*/
+/*   deletefunc finqtr;*/
+/*   deletefunc finyearqtr;*/
+/*run;*/
+/*quit;*/
+proc fcmp outlib=&fcmplib..ndis.findates;
+     function finyear(date) $7;
+ 
+           *accept a number var as the only argument, return char length 7;
+           length year 4;
+           year=year(intnx('year.7',date,0,'B'));
+ 
+           *calculate the starting year of the financial year;
+ 
+           /* return the beginning year of the financial year, concatenated with a hyphen,
+                followed by the last two digits of the following year */
+           return (catx('-',put(year,4.),substr(put(year+1,4.),3)));
+     endsub;
+ 
+     function finqtr(date);
+           length calendar_quarter 3; *temp variable contain calendar quarter;
+           calendar_quarter=qtr(date);
+           /* if the calendar quarter is GT 2 then subtract 2, otherwise add 2 */
+           return (ifn(calendar_quarter>2,calendar_quarter-2,calendar_quarter+2));
+     endsub;
+ 
+     function finyearqtr(date) $10;
+         /* concatenate the results for the FINYEAR & FINQTR functions, separated by
+            ' Q' */
+           return (catx(' Q',finyear(date),put(finqtr(date),1.)));
+     endsub;
+run;
+ 
+quit;
+ 
+options cmplib=(&fcmplib..ndis);
+ 
+/* test functions for the current date */
+/*data _null_;*/
+/*   date=today();*/
+/*   finyear=finyear(date);*/
+/*   finqtr=finqtr(date);*/
+/*   fin_year_qtr=finyearqtr(date);*/
+/*   put date= date9. finyear= finqtr= fin_year_qtr=;*/
+run;
+ 
+proc format lib=&fmtlib;
+     value finyear (default=7 min=7 max=7)
+           low-high=[finyear()];
+     value finqtr (default=1 min=1 max=1)
+           low-high=[finqtr()];
+     value finyearqtr (default=10 min=10 max=10)
+           low-high=[finyearqtr()];
+run;
+ 
+/*data work.testpack;*/
+/*   current_date=today();*/
+/*   length original_date finyear finqtr finyearqtr 5.;*/
+/**/
+/*   do original_date=intnx('year1.1',current_date,-5,'S') to current_date;*/
+/*         finyear=original_date;*/
+/*         finqtr=original_date;*/
+/*         finyearqtr=original_date;*/
+/*         output;*/
+/*   end;*/
+/**/
+/*   format original_date date9. finyear finyear. finqtr finqtr. finyearqtr finyearqtr.;*/
+/*   drop current_date;*/
+/*run;*/
+/**/
+/*proc freq data=work.testpack order=formatted;*/
+/*   tables finyear finqtr finyearqtr/nocum nopercent;*/
+/*run;*/
+
+
+
+data work.Data1;
+     set data;
+     format     AprvlDt2 yymmn6.;
+ 
+/*Set the dates before 30Sep2019 to be the first quarter 2016/17 Q1*/
+     if AprvlDt le '30SEP2016'd then
+          AprvlDt2 = "01jul2016"d;
+     else AprvlDt2=FrstPlanAprvlDt;
+ 
+/*Assign quarters to the rest of dates*/
+       EntryQrtr=FINYEARQTR(AprvlDt2);
+run;
+
